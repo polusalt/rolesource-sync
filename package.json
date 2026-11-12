@@ -6,7 +6,11 @@
     "sync": "node sync/run.mjs --dry",
     "sync:full": "node sync/run.mjs",
     "test": "vitest run",
-    "test:unit": "vitest run tests/unit"
+    "test:unit": "vitest run tests/unit",
+    "build": "node site/build.mjs",
+    "build:sample": "node site/build.mjs --data data/sample --pages 300",
+    "preview": "node tools/preview.mjs",
+    "check:site": "node site/check.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -15,6 +19,8 @@
     "vitest": "^3.2.7"
   },
   "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/work-sans": "^5.3.0",
     "fast-xml-parser": "^4.5.7",
     "sanitize-html": "^2.18.1"
   }

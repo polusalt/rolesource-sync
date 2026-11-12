@@ -6,5 +6,10 @@
   "maxSiteFiles": 98000,
   "sponsorRegisterMaxAgeDays": 14,
   "dryRunEmployers": 50,
-  "_hosting": "Cloudflare Workers static assets on the owner's Workers Paid plan: 100,000 files per version, static requests free and unlimited (docs checked 8 Nov 2026). No Worker code runs on page requests."
+  "_hosting": "Cloudflare Workers static assets on the owner's Workers Paid plan: 100,000 files per version, static requests free and unlimited (docs checked 8 Nov 2026). No Worker code runs on page requests.",
+  "siteUrl": null,
+  "launched": false,
+  "workerName": "rolesource",
+  "indexNowKey": "3775363778849983d0570c8404c023f4",
+  "_launch": "launched=false until phase 6 launch checks: robots.txt blocks all crawling and IndexNow is not pinged. siteUrl is set from the GitHub variable SITE_URL."
 }

@@ -1,6 +1,8 @@
-# Daily job sync (PRD v2 B5). Runs free on GitHub's standard runner because this repo is public
-# (owner, 12 Nov 2026). The job data is never committed: yesterday's output is carried to today's
-# run through the Actions cache, so closed jobs and "first seen" dates work.
+# Daily job sync, site build and deploy (PRD B5, B12 phase 5). Runs free on GitHub's standard runner
+# because this repo is public (owner, 12 Nov 2026). The job data is never committed: yesterday's output
+# is carried to today's run through the Actions cache, so closed jobs and "first seen" dates work.
+# Cost guards (rule 0): stops if the repo is not public; refuses to deploy anything but static assets
+# (no Worker script, so every request is a free static-asset request); keeps one copy of the cache.
 name: Daily sync
 
 on:
@@ -19,7 +21,11 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 300
+    env:
+      HAS_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+      SITE_URL: ${{ vars.SITE_URL }}
+      NODE_OPTIONS: --max-old-space-size=12288
     steps:
       # Rule 0: runner minutes are free only while this repo is public. If it is ever made private,
       # stop here before any paid work starts.
@@ -48,16 +54,51 @@ jobs:
             data/closed.json
             data/adverts
             data/cache
+            data/published-urls.json
           key: sync-data-${{ github.run_id }}
           restore-keys: sync-data-
 
       - name: Sync every employer
+        id: sync
         run: node sync/run.mjs
+
+      - name: Build the site
+        id: build
+        run: node site/build.mjs
+
+      - name: Check the built site (markup, sitemap, noindex, links, file count)
+        run: node site/check.mjs
+
+      # Rule 0: a Worker script would make page requests metered with no spending cap.
+      - name: Refuse anything but static assets
+        run: |
+          if grep -Eq '"main"|run_worker_first' wrangler.jsonc; then echo "wrangler.jsonc names a Worker script: refusing to deploy (rule 0)."; exit 1; fi
+          test ! -e dist/_worker.js || { echo "dist/_worker.js found: refusing to deploy (rule 0)."; exit 1; }
+
+      - name: Deploy to Cloudflare (static assets only)
+        if: env.HAS_CLOUDFLARE == 'true'
         env:
-          NODE_OPTIONS: --max-old-space-size=12288
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -o pipefail
+          npx --yes wrangler@4.157.0 deploy 2>&1 | tee data/deploy.log
+          grep -Eo 'https://[a-z0-9.-]+\.workers\.dev' data/deploy.log | head -1 | sed 's/^/Site address: /' >> "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Skip deploy (no Cloudflare key yet)
+        if: env.HAS_CLOUDFLARE != 'true'
+        run: echo "CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID is not set, so the site was built and checked but not deployed."
+
+      - name: Tell IndexNow about added and removed jobs (only once launched)
+        if: env.HAS_CLOUDFLARE == 'true'
+        run: node site/indexnow.mjs
+
+      - name: Spot-check 50 Apply links
+        continue-on-error: true
+        run: node site/apply-check.mjs 50
 
       - name: Keep today's job data for tomorrow
-        if: success()
+        if: always() && steps.sync.outcome == 'success'
         uses: actions/cache/save@v6
         with:
           path: |
@@ -66,12 +107,13 @@ jobs:
             data/closed.json
             data/adverts
             data/cache
+            data/published-urls.json
           key: sync-data-${{ github.run_id }}
 
       # GitHub may bill cache storage above 10 GB (docs, 12 Nov 2026; rule 0). Each day's data is about 1 GB,
       # so keep only today's copy: delete every older sync-data entry once today's is saved.
       - name: Delete older copies of the job data
-        if: success()
+        if: always() && steps.sync.outcome == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -79,10 +121,15 @@ jobs:
             | grep -v "^sync-data-${{ github.run_id }}$" \
             | while read -r k; do gh cache delete "$k" -R "$GITHUB_REPOSITORY"; done
 
-      - name: Keep the sync report
+      - name: Keep the reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: sync-report
-          path: data/sync-report.json
+          name: reports
+          path: |
+            data/sync-report.json
+            data/build-report.json
+            data/apply-check.json
+            data/deploy.log
+          if-no-files-found: ignore
           retention-days: 14

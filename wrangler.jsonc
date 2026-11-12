@@ -1,0 +1,15 @@
+// Cloudflare Workers static assets, on the owner's Workers Paid plan (CLAUDE.md, 8 Nov 2026).
+// RULE 0: assets only. There is NO "main" script and never "run_worker_first": requests to static
+// assets are free and unlimited, while Worker script requests are metered with no spending cap.
+// The daily workflow refuses to deploy if either appears here.
+{
+  "name": "rolesource",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  }
+}
