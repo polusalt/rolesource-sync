@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  actions: write # only to delete old cache entries
 
 concurrency:
   group: sync
@@ -57,6 +58,17 @@ jobs:
             data/adverts
             data/cache
           key: sync-data-${{ github.run_id }}
+
+      # GitHub may bill cache storage above 10 GB (docs, 12 Nov 2026; rule 0). Each day's data is about 1 GB,
+      # so keep only today's copy: delete every older sync-data entry once today's is saved.
+      - name: Delete older copies of the job data
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh cache list -R "$GITHUB_REPOSITORY" --key sync-data- --limit 100 --json key --jq '.[].key' \
+            | grep -v "^sync-data-${{ github.run_id }}$" \
+            | while read -r k; do gh cache delete "$k" -R "$GITHUB_REPOSITORY"; done
 
       - name: Keep the sync report
         if: always()
