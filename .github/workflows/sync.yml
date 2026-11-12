@@ -21,6 +21,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:
+      # Rule 0: runner minutes are free only while this repo is public. If it is ever made private,
+      # stop here before any paid work starts.
+      - name: Stop if the repo is not public
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v=$(gh api "repos/$GITHUB_REPOSITORY" --jq .visibility)
+          if [ "$v" != "public" ]; then echo "Repo is $v, not public: runner minutes would be billed. Stopping."; exit 1; fi
+
       - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v7
