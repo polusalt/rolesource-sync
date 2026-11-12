@@ -1,0 +1,21 @@
+{
+  "name": "rolesource-workspace",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync": "node sync/run.mjs --dry",
+    "sync:full": "node sync/run.mjs",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.7"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^4.5.7",
+    "sanitize-html": "^2.18.1"
+  }
+}

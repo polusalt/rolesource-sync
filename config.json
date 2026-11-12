@@ -1,0 +1,10 @@
+{
+  "userAgent": "RoleSourceBot/0.1 (job search listing employers' own job adverts; removal requests via the site's contact page)",
+  "maxConcurrentPerHost": 4,
+  "keepFailedBoardDays": 2,
+  "maxJobPages": 90000,
+  "maxSiteFiles": 98000,
+  "sponsorRegisterMaxAgeDays": 14,
+  "dryRunEmployers": 50,
+  "_hosting": "Cloudflare Workers static assets on the owner's Workers Paid plan: 100,000 files per version, static requests free and unlimited (docs checked 8 Nov 2026). No Worker code runs on page requests."
+}

@@ -1,0 +1,67 @@
+# Daily job sync (PRD v2 B5). Runs free on GitHub's standard runner because this repo is public
+# (owner, 12 Nov 2026). The job data is never committed: yesterday's output is carried to today's
+# run through the Actions cache, so closed jobs and "first seen" dates work.
+name: Daily sync
+
+on:
+  schedule:
+    - cron: '17 3 * * *' # 03:17 UTC every day (off the hour, when GitHub's queue is quieter)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci --omit=dev
+
+      - name: Restore yesterday's job data
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            data/jobs.json
+            data/state.json
+            data/closed.json
+            data/adverts
+            data/cache
+          key: sync-data-${{ github.run_id }}
+          restore-keys: sync-data-
+
+      - name: Sync every employer
+        run: node sync/run.mjs
+        env:
+          NODE_OPTIONS: --max-old-space-size=12288
+
+      - name: Keep today's job data for tomorrow
+        if: success()
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            data/jobs.json
+            data/state.json
+            data/closed.json
+            data/adverts
+            data/cache
+          key: sync-data-${{ github.run_id }}
+
+      - name: Keep the sync report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sync-report
+          path: data/sync-report.json
+          retention-days: 14

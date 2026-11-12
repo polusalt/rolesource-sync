@@ -1,0 +1,16 @@
+# This folder is published as a PUBLIC GitHub repo (owner, 12 Nov 2026: "Yes, public repo").
+# Only the daily sync code and its inputs are published. Everything else (plans, research, logs,
+# tests with advert excerpts, discovery data, job data) stays on the owner's PC.
+# Allow-list: ignore everything at the top level, then let through what the sync needs.
+/*
+!/.gitignore
+!/.github/
+!/sync/
+!/config.json
+!/package.json
+!/package-lock.json
+!/README.md
+!/data/
+/data/*
+!/data/employers.json
+!/data/blocklist.json
