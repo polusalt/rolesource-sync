@@ -72,7 +72,8 @@ jobs:
       # Rule 0: a Worker script would make page requests metered with no spending cap.
       - name: Refuse anything but static assets
         run: |
-          if grep -Eq '"main"|run_worker_first' wrangler.jsonc; then echo "wrangler.jsonc names a Worker script: refusing to deploy (rule 0)."; exit 1; fi
+          # Comment lines are skipped: the file's own warning note names both settings.
+          if grep -Ev '^[[:space:]]*//' wrangler.jsonc | grep -Eq '"main"|run_worker_first'; then echo "wrangler.jsonc names a Worker script: refusing to deploy (rule 0)."; exit 1; fi
           test ! -e dist/_worker.js || { echo "dist/_worker.js found: refusing to deploy (rule 0)."; exit 1; }
 
       - name: Deploy to Cloudflare (static assets only)
