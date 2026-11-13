@@ -129,7 +129,8 @@ for (const x of groups) {
 
 // Job checker: employer index plus 64 bucket files of each employer's live jobs
 const empIndex = new Map();
-const buckets = Array.from({ length: BUCKETS }, () => ({}));
+// Prototype-free objects: an employer slug like "constructor" must not hit Object's built-ins.
+const buckets = Array.from({ length: BUCKETS }, () => Object.create(null));
 for (const j of jobs) {
   if (!empIndex.has(j.employerSlug)) empIndex.set(j.employerSlug, [j.employer, j.employerSlug, new Set()]);
   for (const k of boardKeys(j.jobUrl)) if (k.includes('/') || !/^(greenhouse\.io|lever\.co|ashbyhq\.com|smartrecruiters\.com)$/.test(k)) empIndex.get(j.employerSlug)[2].add(k);

@@ -126,7 +126,7 @@ async function initChecker(form) {
       if (!files.has(b)) files.set(b, get(`/s/emp/${b}.json`));
       data = await files.get(b).catch(() => null);
     }
-    const r = check(index, emp => data?.[emp[1]] ?? [], input);
+    const r = check(index, emp => (data && Object.hasOwn(data, emp[1]) ? data[emp[1]] : []), input);
     const co = r.employer ? esc(r.employer[0]) : '';
     const links = (r.jobs ?? []).map(([t, h]) => `<li><a href="${esc(h)}"${h.startsWith('/') ? '' : ' rel="nofollow noopener" target="_blank"'}>${esc(t)}</a></li>`).join('');
     out.innerHTML = {
